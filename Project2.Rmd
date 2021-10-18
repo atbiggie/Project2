@@ -1,0 +1,40 @@
+---
+title: "Project 2"
+author: "Ryan Bunn"
+date: "October 18, 2021"
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+#Introduction
+```{r}
+#For Ryan to do
+#Completed last summarizing all the work done
+```
+
+
+#The Data
+```{r the data}
+#Basic reading of data
+data <- read_csv("OnlineNewsPopularity.csv")
+#data of lifestyle content
+data2<- data[data$data_channel_is_lifestyle == 1,]
+
+set.seed(5763)
+split <- sample(nrow(data2),nrow(data2)*.7)
+train <- data2[split,]
+test <- data2[-split,]
+
+```
+
+#Summarizations
+
+
+#Modeling
+
+
+#Comparison
+
