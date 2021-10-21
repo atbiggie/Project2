@@ -1,6 +1,6 @@
 ---
 title: "Project 2"
-author: "Ryan Bunn"
+author: "Ryan Bunn & Autumn Biggie"
 date: "October 18, 2021"
 
 ---
@@ -8,21 +8,30 @@ date: "October 18, 2021"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(readr)
+library(caret)
+library(ggplot2)
 ```
-#Introduction
+
+
+#Introduction  
+
 ```{r}
 #For Ryan to do
 #Completed last summarizing all the work done
 ```
 
 
-#The Data
-```{r the data}
+#The Data  
+
+```{r the data, message=FALSE, warning=FALSE}
 #Basic reading of data
 data <- read_csv("OnlineNewsPopularity.csv")
-#data of lifestyle content
-data2<- data[data$data_channel_is_lifestyle == 1,]
 
+#data of lifestyle content excluding non-predictive variables  
+data2 <- data[data$data_channel_is_lifestyle == 1,] %>% select(!c(url, timedelta))
+
+#split data into test and train sets
 set.seed(5763)
 split <- sample(nrow(data2),nrow(data2)*.7)
 train <- data2[split,]
@@ -30,7 +39,36 @@ test <- data2[-split,]
 
 ```
 
-#Summarizations
+#Summarizations  
+
+Categorizing select variables to create categorical variables `DayOfWeek`, `TokensInContent`, and `NumShares`.  
+
+```{r dataset copy for manipulation}
+newspop <- data2 %>% 
+  mutate(DayOfWeek = 
+ifelse(weekday_is_monday == 1, "Monday",
+  ifelse(weekday_is_tuesday == 1, "Tuesday", 
+    ifelse(weekday_is_wednesday == 1, "Wednesday", 
+      ifelse(weekday_is_thursday == 1, "Thursday", 
+        ifelse(weekday_is_friday == 1, "Friday", 
+          ifelse(weekday_is_saturday == 1, "Saturday", "Sunday"))))))) %>% 
+  
+  mutate(TokensInContent = 
+ifelse(n_tokens_content > 2000, ">2000", 
+  ifelse(n_tokens_content > 1000, "(1000,2000]", 
+    ifelse(n_tokens_content > 500, "(500,1000]", "[0,500]")))) %>% 
+  
+  mutate(NumShares = 
+ifelse(shares > 25000, ">25000", 
+  ifelse(shares > 15000, "(15000,25000]", 
+    ifelse(shares > 10000, "(10000,15000]", 
+      ifelse(shares > 5000, "(5000,10000]", 
+        ifelse(shares > 4000, "(4000,5000]", 
+          ifelse(shares > 3000, "(3000,4000]", 
+            ifelse(shares > 2000, "(2000,3000]",
+              ifelse(shares > 1000, "(1000,2000]", "<1000")))))))))
+```
+
 
 
 #Modeling
