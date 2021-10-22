@@ -69,6 +69,81 @@ ifelse(shares > 25000, ">25000",
               ifelse(shares > 1000, "(1000,2000]", "<1000")))))))))
 ```
 
+## Contingency Tables  
+
+```{r dayofweek vs. shares}
+newspop$NumShares <- ordered(newspop$NumShares, levels = c("<1000", "(1000,2000]", "(2000,3000]", "(3000,4000]", "(4000,5000]", "(5000,10000]", "(10000,15000]", "(15000,25000]", ">25000"))
+
+newspop$DayOfWeek <- ordered(newspop$DayOfWeek, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+table(newspop$NumShares, newspop$DayOfWeek, deparse.level = 2)
+```
+
+
+
+```{r content tokens vs. shares}
+newspop$TokensInContent <- ordered(newspop$TokensInContent, levels = c("[0,500]", "(500,1000]", "(1000,2000]", ">2000"))
+
+table(newspop$NumShares, newspop$TokensInContent, deparse.level = 2)
+```
+
+
+## Numerical Summaries  
+
+```{r summarizing num_imgs and num_videos by shares}
+newspop %>% group_by(NumShares) %>% summarise(avg_Images = mean(num_imgs), sd_Images = sd(num_imgs), avg_Videos = mean(num_videos), sd_Videos = sd(num_videos))
+```
+
+
+```{r summarizing shares by content tokens}
+newspop %>% group_by(TokensInContent) %>% summarise(avg_shares = mean(shares), sd_shares = sd(shares))
+```
+
+
+```{r summarizing shares by weekday and content tokens, warning=FALSE, message=FALSE}
+newspop %>% group_by(DayOfWeek, TokensInContent) %>% summarise(avg_shares = mean(shares), sd_shares = sd(shares))
+```
+
+## Graphical Summaries  
+
+```{r boxplot of shares vs. day of week}
+summed <- newspop %>% group_by(DayOfWeek) %>% summarise(avg_shares = mean(shares))
+
+#note that this boxplot does not show a significant number of outlier values. The highest share value is just under 50000.
+
+#the line connecting boxplots shows mean value for each
+ggplot(newspop, aes(x = DayOfWeek, y = shares)) +
+  geom_boxplot(fill = "#7fcdbb") + 
+  coord_cartesian(ylim = c(0,10000)) +
+  geom_point(summed, mapping = aes(x = DayOfWeek, y = avg_shares), color = "#0c2c84") + 
+  geom_line(summed, mapping = aes(x = DayOfWeek, y = avg_shares, group = 1), color = "#0c2c84") +
+  labs(title = "Shares by Day of the Week", subtitle = "with boxplot means shown in dark blue", x = "Day of the Week", y = "Number of Shares")
+```
+
+
+
+```{r histogram of shares with tokens in content}
+ggplot(newspop, aes(x = shares, fill = TokensInContent)) + 
+  geom_histogram(bins = 300) + 
+  coord_cartesian(xlim = c(0, 9000)) + 
+  labs(title = "Histogram of Number of Shares", x = "Number of Shares", y = "Count") + 
+  scale_fill_discrete(name = "Number of Words in Content")
+ 
+```
+
+
+
+```{r number of images vs. shares by content token}
+ggplot(newspop, aes(x = num_imgs, y = shares)) +
+  geom_point(aes(color = TokensInContent)) + 
+  coord_cartesian(xlim = c(0,50), ylim = c(0,20000)) + 
+  labs(title = "Number of Images vs. Shares", x = "Number of Images", y = "Number of Shares") + 
+  scale_color_discrete(name = "Number of Words in Content")
+
+
+```
+
+
 
 
 #Modeling
