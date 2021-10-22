@@ -29,7 +29,7 @@ library(ggplot2)
 data <- read_csv("OnlineNewsPopularity.csv")
 
 #data of lifestyle content excluding non-predictive variables  
-data2 <- data[data$data_channel_is_lifestyle == 1,] %>% select(!c(url, timedelta))
+data2 <- data[data$data_channel_is_lifestyle == 1,] %>% select(!c(url, timedelta, starts_with("data_channel_is")))
 
 #split data into test and train sets
 set.seed(5763)
@@ -144,9 +144,47 @@ ggplot(newspop, aes(x = num_imgs, y = shares)) +
 ```
 
 
-
-
 #Modeling
+
+## Linear Regression
+
+The Linear Regression technique attempts to model a response `y` by the predictors $x_i$. A simple linear regression model is of the general form $$Y_i = \beta_0 + \beta_1x_i + E_i$$, but multiple linear regression models can include terms that square the predictors or capture interactions between different predictors. A linear regression model is fit by minimizing the sum of squared residuals, that is, choosing $\beta_0, \beta_1,..., \beta_i$ that minimize the square of the observed - predicted values. It is called a "linear" regression model not because the relationship between the response and predictors is linear, but because each $\beta_i$ is of the first power.     
+
+
+```{r fit linear regression model 1}
+fit_lr <- lm(shares ~ n_tokens_content + n_non_stop_words + num_hrefs + num_self_hrefs + num_videos + kw_avg_avg + self_reference_min_shares + weekday_is_monday + n_tokens_content:num_hrefs + n_tokens_content:num_videos + num_hrefs:num_videos + num_self_hrefs:num_videos + n_tokens_content:kw_avg_avg + n_non_stop_words:kw_avg_avg + n_tokens_content:self_reference_min_shares +   num_videos:weekday_is_monday +  n_tokens_content:num_self_hrefs:num_videos + I(num_videos^2), data = train)
+
+anova(fit_lr)
+summary(fit_lr)
+```
+
+
+## Random Forest  
+
+The Random Forest method for fitting a regression model is similar to the Bagged Tree method. Like the Bagged Tree method, multiple bootstrap samples are taken from the original sample, and a tree is created from each sample. However, the Random Forest method creates the tree using `m` randomly chosen predictors for each sample instead of all predictors every time. This increases independence between trees, leading to a reduction in variance when the results are averaged. This is especially important when there exists an especially strong predictor in the dataset.  
+
+
+```{r fit random forest}
+rf_fit <- train(shares ~ ., data = train,
+            method = "rf", 
+            preProcess = c("center", "scale"),
+            trControl = trainControl(method = "cv", number = 10),
+            tuneGrid = expand.grid(mtry = c(1:15))
+)
+
+rf_fit$results
+rf_fit$bestTune
+```
+
+```{r}
+rf_fit
+```
+
+
+
+## Boosted Tree  
+Description of Boosted Tree method goes here (Ryan)
+
 
 
 #Comparison
