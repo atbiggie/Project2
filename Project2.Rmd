@@ -66,7 +66,23 @@ ifelse(shares > 25000, ">25000",
         ifelse(shares > 4000, "(4000,5000]", 
           ifelse(shares > 3000, "(3000,4000]", 
             ifelse(shares > 2000, "(2000,3000]",
-              ifelse(shares > 1000, "(1000,2000]", "<1000")))))))))
+              ifelse(shares > 1000, "(1000,2000]", "<1000"))))))))) %>% 
+  
+  mutate(weekend = ifelse(is_weekend ==1,"Weekend","Weekday" )) %>%
+  mutate(RateNeg = 
+ifelse(rate_negative_words< .2, "Very Low",
+  ifelse(rate_negative_words < .4, "Low",
+    ifelse(rate_negative_words < .6, "Average",
+      ifelse(rate_negative_words < .8, "High",
+        "Very High")))))%>%
+  
+  mutate(RatePos = 
+ifelse(rate_positive_words< .2, "Very Low",
+  ifelse(rate_positive_words < .4, "Low",
+    ifelse(rate_positive_words < .6, "Average",
+      ifelse(rate_positive_words < .8, "High",
+        "Very High")))))
+
 ```
 
 ## Contingency Tables  
@@ -87,6 +103,20 @@ newspop$TokensInContent <- ordered(newspop$TokensInContent, levels = c("[0,500]"
 table(newspop$NumShares, newspop$TokensInContent, deparse.level = 2)
 ```
 
+```{r weekday and weekend publishing }
+  newspop$RatePos <- ordered(newspop$RatePos, levels = c("Very Low", "Low", "Average", "High", "Very High"))
+  table(newspop$weekend,newspop$RatePos)
+```
+
+```{r Length vs Day Published}
+  newspop$RateNeg <- ordered(newspop$RateNeg, levels = c("Very Low", "Low", "Average", "High", "Very High"))
+  table(newspop$RateNeg,newspop$DayOfWeek)
+```
+
+```{r Length vs NumShares}
+  table(newspop$RatePos,newspop$NumShares)
+```
+
 
 ## Numerical Summaries  
 
@@ -104,6 +134,14 @@ newspop %>% group_by(TokensInContent) %>% summarise(avg_shares = mean(shares), s
 newspop %>% group_by(DayOfWeek, TokensInContent) %>% summarise(avg_shares = mean(shares), sd_shares = sd(shares))
 ```
 
+```{r summarizing shares by RatePos}
+newspop %>% group_by(RatePos) %>% summarise(min_shares = min(shares), max_shares = max(shares),avg_shares=mean(shares), sd_shares=sd(shares))
+```
+
+```{r summarizing shares by RatePos within weekend}
+newspop %>% group_by(weekend,RatePos) %>% summarise(min_shares = min(shares), max_shares = max(shares),avg_shares=mean(shares), sd_shares=sd(shares))
+```
+
 ## Graphical Summaries  
 
 ```{r boxplot of shares vs. day of week}
@@ -118,6 +156,11 @@ ggplot(newspop, aes(x = DayOfWeek, y = shares)) +
   geom_point(summed, mapping = aes(x = DayOfWeek, y = avg_shares), color = "#0c2c84") + 
   geom_line(summed, mapping = aes(x = DayOfWeek, y = avg_shares, group = 1), color = "#0c2c84") +
   labs(title = "Shares by Day of the Week", subtitle = "with boxplot means shown in dark blue", x = "Day of the Week", y = "Number of Shares")
+```
+
+```{r boxplot of shares vs Rate Positive}
+ggplot(newspop, aes(x = RatePos,y = shares))+geom_boxplot(aes(fill = RatePos)) + 
+  coord_cartesian(ylim = c(0,15000))+labs(x="Rate Positive", y = "Shares", title="Reduced Boxplot of Shares by Rate Positive")+scale_fill_discrete(name="Rate Positive")
 ```
 
 
@@ -143,6 +186,14 @@ ggplot(newspop, aes(x = num_imgs, y = shares)) +
 
 ```
 
+```{r RatePos and weekday relationship}
+ggplot(newspop,aes(DayOfWeek))+geom_bar(aes(fill=RatePos), position = "dodge")+labs(x= "Day of Week", y = "Quantity", title = "Barplot of Day of week grouped by Rate Positive")+scale_fill_discrete(name="Rate Positive")
+```
+
+```{r shares vs Num words grouped by RateNeg and Weekend}
+  ggplot(newspop,aes(x=n_tokens_content,y=shares))+geom_point(aes(color=RateNeg,shape=weekend))+coord_cartesian(xlim=c(0,4500),ylim = c(0,50000))+labs(x="Words in Content", y="Shares",title="Shares vs Word content grouped by Rate Negative and Weekend", color="Rate Negative",shape="Weekend")
+```
+
 
 #Modeling
 
@@ -158,6 +209,10 @@ anova(fit_lr)
 summary(fit_lr)
 ```
 
+```{r linear regression model 2}
+#variables with correlation .75 and higher removed
+fit_lr2 <- lm(shares~.-n_unique_tokens-n_non_stop_words-kw_max_min-kw_min_min-kw_max_max-kw_max_avg-self_reference_min_shares-self_reference_max_shares-global_rate_negative_words-rate_positive_words ,data=train)
+```
 
 ## Random Forest  
 
@@ -183,8 +238,20 @@ rf_fit
 
 
 ## Boosted Tree  
-Description of Boosted Tree method goes here (Ryan)
+The Boosted Tree method of model fitting uses the idea of growing many trees sequentially. First a tree is created and then additional trees are grown and modified based upon the previous trees and several tuning parameters. The tuning parameters help to ensure that the tree does not "grow" too quickly and overfit the training data. For our analysis we set the number of trees and interaction depth as our tuning parameters that influence our trees.
 
+```{r Boosted Tree}
+bt_fit <- train(shares ~ ., data = train,
+            method = "gbm", 
+            preProcess = c("center", "scale"),
+            trControl = trainControl(method = "cv", number = 5),
+            tuneGrid = expand.grid(n.trees=c(50,100,200,250),interaction.depth=1:5,shrinkage=.1,n.minobsinnode=10),
+            verbose=FALSE
+)
+pred <- predict(bt_fit,test[,1:52])
+bt_RMSE <- RMSE(pred,test$shares)
+
+```
 
 
 #Comparison
