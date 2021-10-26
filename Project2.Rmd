@@ -1,5 +1,5 @@
 ---
-title: "Project 2"
+title: "Summarizations and Predictive Modeling Using News Popularity Data"
 author: "Ryan Bunn & Autumn Biggie"
 date: "October 18, 2021"
 
@@ -22,7 +22,13 @@ library(ggplot2)
 ```
 
 
+
 #The Data  
+
+First, we read in the news popularity data from the desired data channel, excluding non-predictive variables as well as variables that correspond to other data channels, calling the result `data2`.  
+
+In addition, we split `data2` into a training (70%) and test (30%) set to be using later during model fitting, calling them `train` and `test`, respectively.  
+
 
 ```{r the data, message=FALSE, warning=FALSE}
 #Basic reading of data
@@ -39,9 +45,12 @@ test <- data2[-split,]
 
 ```
 
+
+
 #Summarizations  
 
-Categorizing select variables to create categorical variables `DayOfWeek`, `TokensInContent`, and `NumShares`.  
+The dataset created below is the one we'll be using to explore the data. The `newspop` dataset adds categorical versions of existing variables to create `DayOfWeek`, `TokensInContent`, `NumShares`, `weekend`, `RateNeg`, and `RatePos`.  
+
 
 ```{r dataset copy for manipulation}
 newspop <- data2 %>% 
@@ -69,6 +78,7 @@ ifelse(shares > 25000, ">25000",
               ifelse(shares > 1000, "(1000,2000]", "<1000"))))))))) %>% 
   
   mutate(weekend = ifelse(is_weekend ==1,"Weekend","Weekday" )) %>%
+  
   mutate(RateNeg = 
 ifelse(rate_negative_words< .2, "Very Low",
   ifelse(rate_negative_words < .4, "Low",
@@ -85,9 +95,18 @@ ifelse(rate_positive_words< .2, "Very Low",
 
 ```
 
+
+
 ## Contingency Tables  
 
+Below are contingency tables expressing count data for categorical variables. 
+
+Table 1: Day of the Week vs. Number of Shares  
+
+
 ```{r dayofweek vs. shares}
+#order levels of NumShares and DayOfWeek
+
 newspop$NumShares <- ordered(newspop$NumShares, levels = c("<1000", "(1000,2000]", "(2000,3000]", "(3000,4000]", "(4000,5000]", "(5000,10000]", "(10000,15000]", "(15000,25000]", ">25000"))
 
 newspop$DayOfWeek <- ordered(newspop$DayOfWeek, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
@@ -96,6 +115,8 @@ table(newspop$NumShares, newspop$DayOfWeek, deparse.level = 2)
 ```
 
 
+Table 2: Number of Words in Content vs. Number of Shares  
+
 
 ```{r content tokens vs. shares}
 newspop$TokensInContent <- ordered(newspop$TokensInContent, levels = c("[0,500]", "(500,1000]", "(1000,2000]", ">2000"))
@@ -103,15 +124,30 @@ newspop$TokensInContent <- ordered(newspop$TokensInContent, levels = c("[0,500]"
 table(newspop$NumShares, newspop$TokensInContent, deparse.level = 2)
 ```
 
+
+Table 3: Rate of Positive Words vs. Weekend/Weekday Status  
+
+
+
 ```{r weekday and weekend publishing }
   newspop$RatePos <- ordered(newspop$RatePos, levels = c("Very Low", "Low", "Average", "High", "Very High"))
   table(newspop$weekend,newspop$RatePos)
 ```
 
+
+Table 4: Rate of Negative Words vs. Day of Week  
+
+
+
 ```{r Length vs Day Published}
   newspop$RateNeg <- ordered(newspop$RateNeg, levels = c("Very Low", "Low", "Average", "High", "Very High"))
   table(newspop$RateNeg,newspop$DayOfWeek)
 ```
+
+
+Table 5: Rate of Positive Words vs. Number of Shares  
+
+
 
 ```{r Length vs NumShares}
   table(newspop$RatePos,newspop$NumShares)
@@ -120,9 +156,21 @@ table(newspop$NumShares, newspop$TokensInContent, deparse.level = 2)
 
 ## Numerical Summaries  
 
+Below we explore numerical summaries of the data, grouping by different variables.  
+
+
+Summary 1: Number of Images and Videos Grouped by Number of Shares  
+
+
+
 ```{r summarizing num_imgs and num_videos by shares}
 newspop %>% group_by(NumShares) %>% summarise(avg_Images = mean(num_imgs), sd_Images = sd(num_imgs), avg_Videos = mean(num_videos), sd_Videos = sd(num_videos))
 ```
+
+
+
+Summary 2: Number of Shares Grouped by Number of Words in Content  
+
 
 
 ```{r summarizing shares by content tokens}
@@ -130,24 +178,52 @@ newspop %>% group_by(TokensInContent) %>% summarise(avg_shares = mean(shares), s
 ```
 
 
+Summary 3: Number of Shares Grouped by Day of the Week and Number of Words in Content  
+
+
+
 ```{r summarizing shares by weekday and content tokens, warning=FALSE, message=FALSE}
 newspop %>% group_by(DayOfWeek, TokensInContent) %>% summarise(avg_shares = mean(shares), sd_shares = sd(shares))
 ```
+
+
+Summary 4: Number of Shares Grouped by Rate of Positive Words  
+
+
 
 ```{r summarizing shares by RatePos}
 newspop %>% group_by(RatePos) %>% summarise(min_shares = min(shares), max_shares = max(shares),avg_shares=mean(shares), sd_shares=sd(shares))
 ```
 
-```{r summarizing shares by RatePos within weekend}
+
+Summary 5: Number of Shares Grouped by Weekday/Weekend Status and Rate of Positive Words  
+
+
+
+```{r summarizing shares by RatePos within weekend, warning=FALSE, message=FALSE}
 newspop %>% group_by(weekend,RatePos) %>% summarise(min_shares = min(shares), max_shares = max(shares),avg_shares=mean(shares), sd_shares=sd(shares))
 ```
 
+
+
+
 ## Graphical Summaries  
+
+Next we explore the data visually using graphical summaries.  
+
+Plot 1: Boxplot of Shares vs. Day of the Week  
+
+The boxplot below shows how the number of shares are distributed for each day of the week. Larger boxes indicate more variability, so patterns we may want to look for are:  
+
+* Does the variability of each boxplot change depending on the day of the week?  
+* Are the medians of each boxplot generally consistent?  
+* Are the mean values (depicted in dark blue) similar to the median values or are they heavily affected by outliers?  
+
 
 ```{r boxplot of shares vs. day of week}
 summed <- newspop %>% group_by(DayOfWeek) %>% summarise(avg_shares = mean(shares))
 
-#note that this boxplot does not show a significant number of outlier values. The highest share value is just under 50000.
+#note that this boxplot does not show a significant number of outlier values in order to get a better view of the boxes
 
 #the line connecting boxplots shows mean value for each
 ggplot(newspop, aes(x = DayOfWeek, y = shares)) +
@@ -158,11 +234,19 @@ ggplot(newspop, aes(x = DayOfWeek, y = shares)) +
   labs(title = "Shares by Day of the Week", subtitle = "with boxplot means shown in dark blue", x = "Day of the Week", y = "Number of Shares")
 ```
 
+
+Plot 2: (name and description by Ryan)
+
+
 ```{r boxplot of shares vs Rate Positive}
 ggplot(newspop, aes(x = RatePos,y = shares))+geom_boxplot(aes(fill = RatePos)) + 
   coord_cartesian(ylim = c(0,15000))+labs(x="Rate Positive", y = "Shares", title="Reduced Boxplot of Shares by Rate Positive")+scale_fill_discrete(name="Rate Positive")
 ```
 
+
+Plot 3: Histogram of Number of Shares vs. Number of Words in Content  
+
+This histogram shows how the number of shares are distributed based on the number of words in the article. If the data is right skewed, then most articles had a lower number of shares, and the inverse is also true. In addition, the amount of a certain color on the histogram shows how the number of shares is associated with article length. For example, if there is a lot of red near the lower values of the x-axis, then that means there were a lot of articles with a low number of shares and fewer than 500 words.  
 
 
 ```{r histogram of shares with tokens in content}
@@ -175,6 +259,10 @@ ggplot(newspop, aes(x = shares, fill = TokensInContent)) +
 ```
 
 
+Plot 4: Scatter Plot of Number of Images vs. Number of Shares  
+
+The scatter plot below shows the relationship between the number of images in the article and the number of times the article is shared. If the points follow an upward trend, then articles with  more images tend to be shared more often. If the points follow a downward trend, articles with more images tend to be shared less often. If there is no visible pattern, there may be no relationship between the two variables for this data channel.  
+
 
 ```{r number of images vs. shares by content token}
 ggplot(newspop, aes(x = num_imgs, y = shares)) +
@@ -186,40 +274,64 @@ ggplot(newspop, aes(x = num_imgs, y = shares)) +
 
 ```
 
+
+Plot 5: (name and description by Ryan)  
+
+
 ```{r RatePos and weekday relationship}
 ggplot(newspop,aes(DayOfWeek))+geom_bar(aes(fill=RatePos), position = "dodge")+labs(x= "Day of Week", y = "Quantity", title = "Barplot of Day of week grouped by Rate Positive")+scale_fill_discrete(name="Rate Positive")
 ```
+
+
+Plot 6: (name and description by Ryan)  
+
 
 ```{r shares vs Num words grouped by RateNeg and Weekend}
   ggplot(newspop,aes(x=n_tokens_content,y=shares))+geom_point(aes(color=RateNeg,shape=weekend))+coord_cartesian(xlim=c(0,4500),ylim = c(0,50000))+labs(x="Words in Content", y="Shares",title="Shares vs Word content grouped by Rate Negative and Weekend", color="Rate Negative",shape="Weekend")
 ```
 
 
-#Modeling
+#Modeling  
+
+In this section, we explore different modeling techniques to fit the data. This is where we'll employ the use of our `train` and `test` datasets we created initially. All models are compared at the end of the document.  
+
 
 ## Linear Regression
 
 The Linear Regression technique attempts to model a response `y` by the predictors $x_i$. A simple linear regression model is of the general form $$Y_i = \beta_0 + \beta_1x_i + E_i$$, but multiple linear regression models can include terms that square the predictors or capture interactions between different predictors. A linear regression model is fit by minimizing the sum of squared residuals, that is, choosing $\beta_0, \beta_1,..., \beta_i$ that minimize the square of the observed - predicted values. It is called a "linear" regression model not because the relationship between the response and predictors is linear, but because each $\beta_i$ is of the first power.     
 
 
+Linear Regression Fit 1:
+
+Adj $R^2$: 0.228  
+Residual SE: 7498  
+
 ```{r fit linear regression model 1}
 fit_lr <- lm(shares ~ n_tokens_content + n_non_stop_words + num_hrefs + num_self_hrefs + num_videos + kw_avg_avg + self_reference_min_shares + weekday_is_monday + n_tokens_content:num_hrefs + n_tokens_content:num_videos + num_hrefs:num_videos + num_self_hrefs:num_videos + n_tokens_content:kw_avg_avg + n_non_stop_words:kw_avg_avg + n_tokens_content:self_reference_min_shares +   num_videos:weekday_is_monday +  n_tokens_content:num_self_hrefs:num_videos + I(num_videos^2), data = train)
 
-anova(fit_lr)
-summary(fit_lr)
 ```
+
+
+Linear Regression Fit 2: 
+
+Adj $R^2$: 0.0205  
+Residual SE: 8446  
+
 
 ```{r linear regression model 2}
 #variables with correlation .75 and higher removed
 fit_lr2 <- lm(shares~.-n_unique_tokens-n_non_stop_words-kw_max_min-kw_min_min-kw_max_max-kw_max_avg-self_reference_min_shares-self_reference_max_shares-global_rate_negative_words-rate_positive_words ,data=train)
+
 ```
+
+
 
 ## Random Forest  
 
 The Random Forest method for fitting a regression model is similar to the Bagged Tree method. Like the Bagged Tree method, multiple bootstrap samples are taken from the original sample, and a tree is created from each sample. However, the Random Forest method creates the tree using `m` randomly chosen predictors for each sample instead of all predictors every time. This increases independence between trees, leading to a reduction in variance when the results are averaged. This is especially important when there exists an especially strong predictor in the dataset.  
 
 
-```{r fit random forest}
+```{r fit random forest, cache=TRUE, warning=FALSE}
 rf_fit <- train(shares ~ ., data = train,
             method = "rf", 
             preProcess = c("center", "scale"),
@@ -227,18 +339,15 @@ rf_fit <- train(shares ~ ., data = train,
             tuneGrid = expand.grid(mtry = c(1:15))
 )
 
-rf_fit$results
 rf_fit$bestTune
-```
-
-```{r}
-rf_fit
 ```
 
 
 
 ## Boosted Tree  
-The Boosted Tree method of model fitting uses the idea of growing many trees sequentially. First a tree is created and then additional trees are grown and modified based upon the previous trees and several tuning parameters. The tuning parameters help to ensure that the tree does not "grow" too quickly and overfit the training data. For our analysis we set the number of trees and interaction depth as our tuning parameters that influence our trees.
+
+The Boosted Tree method of model fitting uses the idea of growing many trees sequentially. First a tree is created and then additional trees are grown and modified based upon the previous trees and several tuning parameters. The tuning parameters help to ensure that the tree does not "grow" too quickly and overfit the training data. For our analysis we set the number of trees and interaction depth as our tuning parameters that influence our trees.  
+
 
 ```{r Boosted Tree}
 bt_fit <- train(shares ~ ., data = train,
@@ -248,11 +357,56 @@ bt_fit <- train(shares ~ ., data = train,
             tuneGrid = expand.grid(n.trees=c(50,100,200,250),interaction.depth=1:5,shrinkage=.1,n.minobsinnode=10),
             verbose=FALSE
 )
-pred <- predict(bt_fit,test[,1:52])
-bt_RMSE <- RMSE(pred,test$shares)
 
 ```
 
 
-#Comparison
+
+#Comparison  
+
+Lastly, we compare the models fitted using the `train` data above by running them on the `test` dataset.  
+
+
+```{r run models on test dataset}
+#run linear model 1 on test set
+test_lr1 <- lm(shares ~ n_tokens_content + n_non_stop_words + num_hrefs + num_self_hrefs + num_videos + kw_avg_avg + self_reference_min_shares + weekday_is_monday + n_tokens_content:num_hrefs + n_tokens_content:num_videos + num_hrefs:num_videos + num_self_hrefs:num_videos + n_tokens_content:kw_avg_avg + n_non_stop_words:kw_avg_avg + n_tokens_content:self_reference_min_shares +   num_videos:weekday_is_monday +  n_tokens_content:num_self_hrefs:num_videos + I(num_videos^2), data = test)
+
+mse1 <- mean(residuals(test_lr1)^2)
+lr1_rmse <- sqrt(mse1)
+
+#run linear model 2 on test set
+test_lr2 <- lm(shares~.-n_unique_tokens-n_non_stop_words-kw_max_min-kw_min_min-kw_max_max-kw_max_avg-self_reference_min_shares-self_reference_max_shares-global_rate_negative_words-rate_positive_words ,data=test)
+
+mse2 <- mean(residuals(test_lr2)^2)
+lr2_rmse <- sqrt(mse2)
+
+#run random forest model on test set
+pred1 <- predict(rf_fit,test[,1:52])
+rf_RMSE <- RMSE(pred1,test$shares)
+
+#run boosted tree model on test set
+pred2 <- predict(bt_fit,test[,1:52])
+bt_RMSE <- RMSE(pred2,test$shares)
+
+#create vectors to form DF
+rmse_vec <- c(lr1_rmse, lr2_rmse, rf_RMSE, bt_RMSE)
+rmse_labs <- c("Linear Model 1", "Linear Model 2", "Random Forest Model", "Boosted Tree Model")
+
+#create dataframe for easy comparison of model RMSE
+comp <- data.frame(rmse_labs, rmse_vec) %>% rename(Model = rmse_labs, RMSE = rmse_vec)
+comp
+
+```
+
+```{r, include=FALSE}
+min_RMSE <- min(comp$RMSE)
+place <- which(comp$RMSE == min_RMSE)
+best_model <- comp[place,1]
+```
+
+
+According to the comparison chart above, the lowest RMSE value is `r min_RMSE`, corresponding to the `r best_model`. Of the models we have explored above, the `r best_model` is the best model for the data from this channel.  
+
+
+
 
