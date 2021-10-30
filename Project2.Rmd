@@ -26,10 +26,11 @@ rmarkdown::render("Project2.Rmd",output_file=i,params = list("channel"= i))
 #Completed last summarizing all the work done
 ```
 
-#Introduction 
+#Introduction  
 
-For this report we looked at the online news popularity data set, collecting all articles in the `r params$channel` channel. The data set provided contains information about articles published by Mashable over 2 years. We are insterested in predicting the number of shares an article gets, the shares variable, based upon its other attributes. We are particularly insterested in the day of the week, number of words/tokens in the content, rate of positive words amoung non-neutral tokens, and rate of negative words amoung non-neutral tokens.
-For our analysis we created a total of 4 models, 2 linear regression models, 1 random forest model, and 1 boosted tree model.
+For this report we looked at the online news popularity data set, collecting all articles in the `r params$channel` channel. The data set provided contains information about articles published by Mashable over 2 years. We are interested in predicting the number of shares an article gets, the `shares` variable, based upon its other attributes. We are particularly interested in the day of the week, number of words/tokens in the content, rate of positive words amoung non-neutral tokens, and rate of negative words amoung non-neutral tokens.
+For our analysis we created a total of 4 models: 2 linear regression models, 1 random forest model, and 1 boosted tree model.  
+
 
 #The Data  
 
@@ -257,7 +258,7 @@ ggplot(newspop, aes(x = DayOfWeek, y = shares)) +
 
 Plot 2: Shares vs Rate Positive boxplot
 
-The boxplot below shows the number of shares compared to the five classes of the rate of positive words we created above. We are interested in comparing the 5 different groups and how the rate of positive words may affect the number of shares a story recieves. If there is little to no affect all of the boxes will be in approaximatly the same position.
+The boxplot below shows the number of shares compared to the five classes of the rate of positive words we created above. We are interested in comparing the 5 different groups and how the rate of positive words may affect the number of shares a story recieves. If there is little to no effect, all of the boxes will be in approximately the same position.
 
 ```{r boxplot of shares vs Rate Positive}
 ggplot(newspop, aes(x = RatePos,y = shares))+geom_boxplot(aes(fill = RatePos)) + 
@@ -314,7 +315,7 @@ The scatter plot below shows several different relationships between shares, Rat
 ```
 
 
-#Modeling  
+# Modeling  
 
 In this section, we explore different modeling techniques to fit the data. This is where we'll employ the use of our `train` and `test` datasets we created initially. All models are compared at the end of the document.  
 
