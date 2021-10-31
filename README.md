@@ -14,10 +14,10 @@ rmarkdown::render("Project2.Rmd",output_file=i,params = list("channel"= i))
 }`  
 
 ## Links:  
-* The analysis for **lifestyle** articles is available [here](../../Lifestyle.html)  
-* The analysis for **entertainment** articles is available [here](../../Entertainment.html)  
-* The analysis for **business** articles is available [here](../../Business.html)  
-* The analysis for **social media** articles is available [here](../../Social%20Media.html)  
-* The analysis for **tech** articles is available [here](../../Tech.html)  
-* The analysis for **world** articles is available [here](../../World.html)  
+* The analysis for **lifestyle** articles is available [here](https://atbiggie.github.io/Project2/Lifestyle)  
+* The analysis for **entertainment** articles is available [here](https://atbiggie.github.io/Project2/Entertainment)  
+* The analysis for **business** articles is available [here](https://atbiggie.github.io/Project2/Business)  
+* The analysis for **social media** articles is available [here](https://atbiggie.github.io/Project2/Social%20Media)  
+* The analysis for **tech** articles is available [here](https://atbiggie.github.io/Project2/Tech)  
+* The analysis for **world** articles is available [here](https://atbiggie.github.io/Project2/World)  
 
