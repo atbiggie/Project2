@@ -6,14 +6,14 @@ October 29, 2021
 # Creation Code
 
 ``` r
-for(i in c("Business")){#c("Lifestyle","Entertainment","Business","Social Media","Tech","World")){
+for(i in c("Lifestyle","Entertainment","Business","Social Media","Tech","World")){
 rmarkdown::render("Project2.Rmd",output_file=i,params = list("channel"= i))
 }
-#For Ryan to do
-#Completed last summarizing all the work done
 ```
 
 # Introduction
+
+For this report we looked at the online news popularity data set, collecting all articles in the Business channel. The data set provided contains information about articles published by Mashable over 2 years. We are interested in predicting the number of shares an article gets, the `shares` variable, based upon its other attributes. We are particularly interested in the day of the week, number of words/tokens in the content, rate of positive words amoung non-neutral tokens, and rate of negative words amoung non-neutral tokens. For our analysis we created a total of 4 models: 2 linear regression models, 1 random forest model, and 1 boosted tree model.
 
 # The Data
 
@@ -30,6 +30,14 @@ if(params$channel =="lifestyle"){
   data2 <- data[data$data_channel_is_lifestyle == 1,] %>% select(!c(url, timedelta, starts_with("data_channel_is")))
 } else if(params$channel == "Business"){
     data2 <- data[data$data_channel_is_bus == 1,] %>% select(!c(url, timedelta, starts_with("data_channel_is")))
+} else if(params$channel == "Entertainment"){
+    data2 <- data[data$data_channel_is_entertainment == 1,] %>% select(!c(url, timedelta, starts_with("data_channel_is")))
+} else if(params$channel == "Social Media"){
+    data2 <- data[data$data_channel_is_socmed == 1,] %>% select(!c(url, timedelta, starts_with("data_channel_is")))
+} else if(params$channel == "Tech"){
+    data2 <- data[data$data_channel_is_tech == 1,] %>% select(!c(url, timedelta, starts_with("data_channel_is")))
+} else{
+    data2 <- data[data$data_channel_is_world == 1,] %>% select(!c(url, timedelta, starts_with("data_channel_is")))
   }
 
 #split data into test and train sets
@@ -268,7 +276,9 @@ ggplot(newspop, aes(x = DayOfWeek, y = shares)) +
 
 ![](Business_files/figure-markdown_github/boxplot%20of%20shares%20vs.%20day%20of%20week-1.png)
 
-Plot 2: (name and description by Ryan)
+Plot 2: Shares vs Rate Positive boxplot
+
+The boxplot below shows the number of shares compared to the five classes of the rate of positive words we created above. We are interested in comparing the 5 different groups and how the rate of positive words may affect the number of shares a story recieves. If there is little to no effect, all of the boxes will be in approximately the same position.
 
 ``` r
 ggplot(newspop, aes(x = RatePos,y = shares))+geom_boxplot(aes(fill = RatePos)) + 
@@ -305,7 +315,9 @@ ggplot(newspop, aes(x = num_imgs, y = shares)) +
 
 ![](Business_files/figure-markdown_github/number%20of%20images%20vs.%20shares%20by%20content%20token-1.png)
 
-Plot 5: (name and description by Ryan)
+Plot 5: Barplot of Number of articles grouped by Rate Positive and the Day of the week.
+
+In the barplot below we are interested in seeing if there is any relationship between the Rate of Positive words in an article and the day of the week when an article is published. In addition, we can see the days articles are more likely to be published and the Rate Positive groups that publishers prefer.
 
 ``` r
 ggplot(newspop,aes(DayOfWeek))+geom_bar(aes(fill=RatePos), position = "dodge")+labs(x= "Day of Week", y = "Quantity", title = "Barplot of Day of week grouped by Rate Positive")+scale_fill_discrete(name="Rate Positive")
@@ -313,7 +325,9 @@ ggplot(newspop,aes(DayOfWeek))+geom_bar(aes(fill=RatePos), position = "dodge")+l
 
 ![](Business_files/figure-markdown_github/RatePos%20and%20weekday%20relationship-1.png)
 
-Plot 6: (name and description by Ryan)
+Plot 6: Scatter Plot of number of shares grouped by Rate of Negative words and Weekend status.
+
+The scatter plot below shows several different relationships between shares, Rate of Negative words and weekend vs weekday. If we can see a clustering of shapes and colors that are the similar it can show a relationship between the posting date, shares, and the Rate of Negative words in the articles.
 
 ``` r
   ggplot(newspop,aes(x=n_tokens_content,y=shares))+geom_point(aes(color=RateNeg,shape=weekend))+coord_cartesian(xlim=c(0,4500),ylim = c(0,50000))+labs(x="Words in Content", y="Shares",title="Shares vs Word content grouped by Rate Negative and Weekend", color="Rate Negative",shape="Weekend")
@@ -333,22 +347,20 @@ The Linear Regression technique attempts to model a response `y` by the predicto
 
 Linear Regression Fit 1:
 
-Adj *R*<sup>2</sup>: 0.228
-Residual SE: 7498
-
 ``` r
 fit_lr <- lm(shares ~ n_tokens_content + n_non_stop_words + num_hrefs + num_self_hrefs + num_videos + kw_avg_avg + self_reference_min_shares + weekday_is_monday + n_tokens_content:num_hrefs + n_tokens_content:num_videos + num_hrefs:num_videos + num_self_hrefs:num_videos + n_tokens_content:kw_avg_avg + n_non_stop_words:kw_avg_avg + n_tokens_content:self_reference_min_shares +   num_videos:weekday_is_monday +  n_tokens_content:num_self_hrefs:num_videos + I(num_videos^2), data = train)
 ```
 
-Linear Regression Fit 2:
+Adj *R*<sup>2</sup>: 0.0435668 Residual SE: 1.626550710^{4}
 
-Adj *R*<sup>2</sup>: 0.0205
-Residual SE: 8446
+Linear Regression Fit 2:
 
 ``` r
 #variables with correlation .75 and higher removed
 fit_lr2 <- lm(shares~.-n_unique_tokens-n_non_stop_words-kw_max_min-kw_min_min-kw_max_max-kw_max_avg-self_reference_min_shares-self_reference_max_shares-global_rate_negative_words-rate_positive_words ,data=train)
 ```
+
+Adj *R*<sup>2</sup>: 0.0310459 Residual SE: 1.641118910^{4}
 
 ## Random Forest
 

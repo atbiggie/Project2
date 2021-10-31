@@ -22,8 +22,6 @@ library(ggplot2)
 for(i in c("Lifestyle","Entertainment","Business","Social Media","Tech","World")){
 rmarkdown::render("Project2.Rmd",output_file=i,params = list("channel"= i))
 }
-#For Ryan to do
-#Completed last summarizing all the work done
 ```
 
 #Introduction  
