@@ -17,7 +17,7 @@ rmarkdown::render("Project2.Rmd",output_file=i,params = list("channel"= i))
 * The analysis for **lifestyle** articles is available [here](Lifestyle.html)  
 * The analysis for **entertainment** articles is available [here](Entertainment.html)  
 * The analysis for **business** articles is available [here](Business.html)  
-* The analysis for **social media** articles is available [here](Social_Media.html)  
+* The analysis for **social media** articles is available [here](Social Media.html)  
 * The analysis for **tech** articles is available [here](Tech.html)  
 * The analysis for **world** articles is available [here](World.html)  
 
